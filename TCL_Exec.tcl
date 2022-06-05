@@ -5,11 +5,11 @@
 # Information:
 #	TCL_Exec permet d'executer des commandes TCL via IRC a votre robot.
 #
-# Copyright 2008-2015 by ARTiSPRETiS (Familly) ARTiSPRETiS@GMail.Com
+# Copyright 2008-2015 by Creole (Familly) Creole@GMail.Com
 #
-# Create by MalaGaM <MalaGaM.ARTiSPRETiS@GMail.Com>
+# Create by ZarTek <ZarTek.Creole@GMail.Com>
 #
-# Changelog V1.0.20150219 by MalaGaM 19.02.2015
+# Changelog V1.0.20150219 by ZarTek 19.02.2015
 #	- Creation d'un namespace pour eviter tout conflit avec d'autres scripts
 #	- Mise en package TCLExec pour pouvoir verifier sa presence "package require TCLExec"
 #	- Dechargement propre au rehash et au restart
@@ -21,12 +21,12 @@
 if {[info commands ::TCLExec::uninstall] eq "::TCLExec::uninstall"} { ::TCLExec::uninstall }
 package require Tcl 8.5
 namespace eval TCLExec {
-	variable Prefix_CMD		"tcl";			# Commande qui permet d'executé du code TCL.
+	variable Prefix_CMD		"tcl";			# Commande qui permet d'executï¿½ du code TCL.
 	variable Multi_CMD		"2";			# Multi Commandes: 
 											# 1-> !<prefix>
 											# 2-> !bot<prefix> et !<prefix>
 											# 3-> !bot<prefix>
-	variable List_Users		"MalaGaM will2 gtturboulette";	# Liste des utilisateurs autoriser. Laisser vide pour tout le monde
+	variable List_Users		"ZarTek will2 gtturboulette";	# Liste des utilisateurs autoriser. Laisser vide pour tout le monde
 	variable List_Salons	"";				# Liste des salons autoriser. Laisser vide pour autoriser tout les salons
 	
 ###########################
@@ -41,10 +41,10 @@ namespace eval TCLExec {
 	variable	ScriptName	"TCL Exec V$version";
 	package		provide TCLExec $version;
 
-	# Procédure de désinstallation
-	# (le script se désinstalle totalement avant chaque rehash ou à chaque relecture au moyen de la commande "source" ou autre)
+	# Procï¿½dure de dï¿½sinstallation
+	# (le script se dï¿½sinstalle totalement avant chaque rehash ou ï¿½ chaque relecture au moyen de la commande "source" ou autre)
 	proc uninstall {args} {
-		putlog "Désallocation des ressources de \002$::TCLExec::ScriptName\002...";
+		putlog "Dï¿½sallocation des ressources de \002$::TCLExec::ScriptName\002...";
 		foreach binding [lsearch -inline -all -regexp [binds *[set ns [string range [namespace current] 2 end]]*] " \{?(::)?$ns"] {
 			unbind [lindex $binding 0] [lindex $binding 1] [lindex $binding 2] [lindex $binding 4];
 		}
@@ -106,4 +106,4 @@ namespace eval TCLExec {
 		foreach line $error { putserv "PRIVMSG $chan :$line"; }
 	}
 }
-putlog "$::TCLExec::ScriptName ARTiSPRETiS (ARTiSPRETiS@GMail.Com) by MalaGaM.";
+putlog "$::TCLExec::ScriptName Creole (Creole@GMail.Com) by ZarTek.";
