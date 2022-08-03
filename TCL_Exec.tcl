@@ -5,9 +5,9 @@
 # Information:
 #	TCL_Exec permet d'executer des commandes TCL via IRC a votre robot.
 #
-# Copyright 2008-2015 by Creole (Familly) Creole@GMail.Com
+# Copyright 2008-2022 by ZarTek-Creole
 #
-# Create by ZarTek <ZarTek.Creole@GMail.Com>
+# Create by ZarTek @ https://github.com/ZarTek-Creole
 #
 # Changelog V1.0.20150219 by ZarTek 19.02.2015
 #	- Creation d'un namespace pour eviter tout conflit avec d'autres scripts
