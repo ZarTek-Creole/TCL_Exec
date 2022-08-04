@@ -1,0 +1,149 @@
+<html>
+<head><title>TCL_Exec.tcl</title></head>
+<body bgcolor="#ffffff">
+<font size="-2">
+Index by:  <a href="index_main.html#TCL_Exec.tcl">file name</a> |
+<a href="index_main.html#byprocname">procedure name</a> |
+<a href="index_main.html#bycall">procedure call</a> |
+<a href="index_annot_full.html">annotation</a>
+</font>
+<hr>
+<strong>TCL_Exec.tcl</strong>
+(<a href="TCL_Exec.tcl-annot.html">annotations</a> | <a href="TCL_Exec.tcl.txt">original source</a>)
+<p>
+<pre>
+<font color="#208020">##########################################################################</font>
+<font color="#208020">#</font>
+<font color="#208020"># Script Name: TCL_Exec.tcl</font>
+<font color="#208020">#</font>
+<font color="#208020"># Information:</font>
+<font color="#208020">#	TCL_Exec permet d'executer des commandes TCL via IRC a votre robot.</font>
+<font color="#208020">#</font>
+<font color="#208020"># Copyright 2008-2022 by ZarTek-Creole</font>
+<font color="#208020">#</font>
+<font color="#208020"># Create by ZarTek @ https://github.com/ZarTek-Creole</font>
+<font color="#208020">#</font>
+<font color="#208020"># Changelog V1.0.20150219 by ZarTek 19.02.2015</font>
+<font color="#208020">#	- Creation d'un namespace pour eviter tout conflit avec d'autres scripts</font>
+<font color="#208020">#	- Mise en package TCLExec pour pouvoir verifier sa presence &quot;package require TCLExec&quot;</font>
+<font color="#208020">#	- Dechargement propre au rehash et au restart</font>
+<font color="#208020">#	- Multi commandes, !tcl ou !nicktcl</font>
+<font color="#208020">#	- Autoriser tout les salons ou que certains</font>
+<font color="#208020">#	- Autoriser tout les nick ou que certains</font>
+<font color="#208020">#	- Creation d'un flag +E qui bypass la verification nick/salon : .chattr nick +E</font>
+<font color="#208020">##########################################################################</font>
+if { [info commands ::TCLExec::uninstall] eq &quot;::TCLExec::uninstall&quot; } { <a name="::TCLExec::uninstall(1)"><a href="./TCL_Exec.tcl.html#::TCLExec::uninstall_47">::TCLExec::uninstall</a></a> }
+package require Tcl 8.5
+namespace eval TCLExec {
+	variable Prefix_CMD		&quot;tcl&quot;;			<font color="#208020"># Commande qui permet d'execut� du code TCL.</font>
+	variable Multi_CMD		&quot;2&quot;;			<font color="#208020"># Multi Commandes: </font>
+											<font color="#208020"># 1-&gt; !&lt;prefix&gt;</font>
+											<font color="#208020"># 2-&gt; !bot&lt;prefix&gt; et !&lt;prefix&gt;</font>
+											<font color="#208020"># 3-&gt; !bot&lt;prefix&gt;</font>
+	variable List_Users		&quot;ZarTek&quot;;	<font color="#208020"># Liste des utilisateurs autoriser. Laisser vide pour tout le monde</font>
+	variable List_Salons	&quot;&quot;;				<font color="#208020"># Liste des salons autoriser. Laisser vide pour autoriser tout les salons</font>
+	
+<font color="#208020">###########################</font>
+<font color="#208020"># Fin de la Configuration #</font>
+<font color="#208020">###########################</font>
+
+<font color="#208020">#############################################################################</font>
+<font color="#208020">### Initialisation</font>
+<font color="#208020">#############################################################################</font>
+	array set SCRIPT {
+		&quot;name&quot;				&quot;TCL Exec&quot;
+		&quot;version&quot;			&quot;1.0.3&quot;
+		&quot;auteur&quot;			&quot;ZarTek&quot;
+	}
+}
+	<font color="#208020"># Proc�dure de d�sinstallation</font>
+	<font color="#208020"># (le script se d�sinstalle totalement avant chaque rehash ou � chaque relecture au moyen de la commande &quot;source&quot; ou autre)</font>
+<strong><a name="::TCLExec::uninstall_47">proc <a href="TCL_Exec.tcl-annot.html#::TCLExec::uninstall">::TCLExec::uninstall</a></a></strong><a name="::TCLExec::uninstall"></a> {args} {
+	putlog &quot;D�sallocation des ressources de \002${::TCLExec::SCRIPT(name)}\002...&quot;;
+	foreach binding [lsearch -inline -all -regexp [binds *[set ns [string range [namespace current] 2 end]]*] &quot; \{?(::)?${ns}&quot;] {
+		unbind [lindex $binding 0] [lindex $binding 1] [lindex $binding 2] [lindex $binding 4];
+	}
+	foreach running_timer [timers] {
+		if { [::tcl::string::match &quot;*[namespace current]::*&quot; [lindex ${running_timer} 1]] } { killtimer [lindex ${running_timer} 2] }
+	}
+	foreach running_utimer [utimers] {
+		if { [::tcl::string::match &quot;*[namespace current]::*&quot; [lindex ${running_utimer} 1]] } { killutimer [lindex ${running_utimer} 2] }
+	}
+	namespace delete ::TCLExec
+}
+
+
+if { ${::TCLExec::Multi_CMD} == 1 } {
+	bind pub - &quot;${::TCLExec::Prefix_CMD}&quot; ::TCLExec::Command
+} elseif { ${::TCLExec::Multi_CMD} == 2} {
+	bind pub - &quot;${::TCLExec::Prefix_CMD}&quot; ::TCLExec::Command
+	bind pub - &quot;${::botnet-nick}tcl&quot; ::TCLExec::Command
+	bind pub - &quot;${::botnet-nick}${::TCLExec::Prefix_CMD}&quot; ::TCLExec::Command
+	bind pub - &quot;[string tolower ${::botnet-nick}]${::TCLExec::Prefix_CMD}&quot; ::TCLExec::Command
+	bind pub - &quot;[string toupper ${::botnet-nick}]${::TCLExec::Prefix_CMD}&quot; ::TCLExec::Command
+	bind pub - &quot;[string tolower ${::botnet-nick}]tcl&quot; ::TCLExec::Command
+	bind pub - &quot;[string toupper ${::botnet-nick}]tcl&quot; ::TCLExec::Command
+} elseif {$::TCLExec::Multi_CMD == 3} {
+	bind pub - &quot;${::botnet-nick}tcl&quot; ::TCLExec::Command
+	bind pub - &quot;${::botnet-nick}tcl&quot; ::TCLExec::Command
+	bind pub - &quot;${::botnet-nick}${::TCLExec::Prefix_CMD}&quot; ::TCLExec::Command
+	bind pub - &quot;[string tolower ${::botnet-nick}]${::TCLExec::Prefix_CMD}&quot; ::TCLExec::Command
+	bind pub - &quot;[string toupper ${::botnet-nick}]${::TCLExec::Prefix_CMD}&quot; ::TCLExec::Command
+	bind pub - &quot;[string tolower ${::botnet-nick}]tcl&quot; ::TCLExec::Command
+	bind pub - &quot;[string toupper ${::botnet-nick}]tcl&quot; ::TCLExec::Command
+
+}
+<strong><a name="::TCLExec::Command_82">proc <a href="TCL_Exec.tcl-annot.html#::TCLExec::Command">::TCLExec::Command</a></a></strong><a name="::TCLExec::Command"></a> { nick host hand chan args } {
+	if {![matchattr ${nick} E]} {
+		if {
+			${::TCLExec::List_Users} != &quot;&quot; 								&amp;&amp; \
+			[lsearch -glob ${::TCLExec::List_Users} ${nick}] == -1
+		} { 
+			putserv &quot;privmsg ${chan} :Nickname '${nick}' have access denied.&quot;;
+			return 0; 
+		}
+		if {
+			${::TCLExec::List_Salons} != &quot;&quot; 							&amp;&amp; \
+			[lsearch -glob $::TCLExec::List_Salons ${chan}] == -1
+		} {
+			putserv &quot;privmsg ${chan} :Channel '${chan}' have access denied.&quot;;
+			return 0;
+		}
+	}
+	set args 	[lindex ${args} 0];
+	set start 	[clock clicks];
+	set errnum 	[catch {eval ${args}} error];
+	set end 	[clock clicks];
+	if { ${error} == &quot;&quot; } { 
+		set error &quot;&lt;empty string&gt;&quot;; 
+	}
+	switch -- ${errnum} {
+		0 {
+			if { ${error} == &quot;&lt;empty string&gt;&quot; } { set error &quot;OK&quot;; } { set error &quot;OK: ${error}&quot;; }
+		}
+		2 {
+			set error &quot;Return: ${error}&quot;;
+		}
+		1 {
+			set error &quot;Error: ${error}&quot;;
+		}
+		default {set error &quot;${errnum}: ${error}&quot;}
+	}
+	set error &quot;${error} - [expr (${end}-${start})/1000.0] ms&quot;;
+	set error [split ${error} &quot;\n&quot;];
+	foreach line ${error} { putserv &quot;PRIVMSG ${chan} :${line}&quot;; }
+}
+
+package		provide TCLExec ${::TCLExec::SCRIPT(version)};
+putlog &quot;${::TCLExec::SCRIPT(name)} v$${::TCLExec::SCRIPT(version)} by $${::TCLExec::SCRIPT(auteur)}.&quot;;
+</pre>
+<hr>
+<font size="-2">
+Index by:  <a href="index_main.html#byfilename">file name</a> |
+<a href="index_main.html#byprocname">procedure name</a> |
+<a href="index_main.html#bycall">procedure call</a> |
+<a href="index_annot_full.html">annotation</a><br>
+<cite>Index generated 2022-08-04 at 22:29.</cite>
+</font>
+</body>
+</html>
