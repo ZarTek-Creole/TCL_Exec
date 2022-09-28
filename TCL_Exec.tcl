@@ -21,11 +21,11 @@
 if { [info commands ::TCLExec::uninstall] eq "::TCLExec::uninstall" } { ::TCLExec::uninstall }
 package require Tcl 8.5
 namespace eval TCLExec {
-	variable Prefix_CMD		"tcl";			# Commande qui permet d'execut� du code TCL.
+	variable Prefix_CMD		"tcl";			# Commande qui permet d'executé du code TCL.
 	variable Multi_CMD		"2";			# Multi Commandes: 
-											# 1-> !<prefix>
-											# 2-> !bot<prefix> et !<prefix>
-											# 3-> !bot<prefix>
+											# 1-> <prefix>
+											# 2-> bot<prefix> et <prefix>
+											# 3-> bot<prefix>
 	variable List_Users		"ZarTek";	# Liste des utilisateurs autoriser. Laisser vide pour tout le monde
 	variable List_Salons	"";				# Liste des salons autoriser. Laisser vide pour autoriser tout les salons
 	
@@ -38,22 +38,16 @@ namespace eval TCLExec {
 #############################################################################
 	array set SCRIPT {
 		"name"				"TCL Exec"
-		"version"			"1.0.3"
+		"version"			"1.0.4"
 		"auteur"			"ZarTek"
 	}
 }
-	# Proc�dure de d�sinstallation
-	# (le script se d�sinstalle totalement avant chaque rehash ou � chaque relecture au moyen de la commande "source" ou autre)
+	# Procédure de désinstallation
+	# (le script se désinstalle totalement avant chaque rehash ou é chaque relecture au moyen de la commande "source" ou autre)
 proc ::TCLExec::uninstall {args} {
-	putlog "D�sallocation des ressources de \002${::TCLExec::SCRIPT(name)}\002...";
+	putlog "Désallocation des ressources de \002${::TCLExec::SCRIPT(name)}\002...";
 	foreach binding [lsearch -inline -all -regexp [binds *[set ns [string range [namespace current] 2 end]]*] " \{?(::)?${ns}"] {
-		unbind [lindex $binding 0] [lindex $binding 1] [lindex $binding 2] [lindex $binding 4];
-	}
-	foreach running_timer [timers] {
-		if { [::tcl::string::match "*[namespace current]::*" [lindex ${running_timer} 1]] } { killtimer [lindex ${running_timer} 2] }
-	}
-	foreach running_utimer [utimers] {
-		if { [::tcl::string::match "*[namespace current]::*" [lindex ${running_utimer} 1]] } { killutimer [lindex ${running_utimer} 2] }
+		unbind [lindex ${binding} 0] [lindex ${binding} 1] [lindex ${binding} 2] [lindex ${binding} 4];
 	}
 	namespace delete ::TCLExec
 }
@@ -121,4 +115,4 @@ proc ::TCLExec::Command { nick host hand chan args } {
 }
 
 package		provide TCLExec ${::TCLExec::SCRIPT(version)};
-putlog "${::TCLExec::SCRIPT(name)} v$${::TCLExec::SCRIPT(version)} by $${::TCLExec::SCRIPT(auteur)}.";
+putlog "${::TCLExec::SCRIPT(name)} v${::TCLExec::SCRIPT(version)} by ${::TCLExec::SCRIPT(auteur)}.";
