@@ -20,19 +20,7 @@
 ##########################################################################
 if { [info commands ::TCLExec::uninstall] eq "::TCLExec::uninstall" } { ::TCLExec::uninstall }
 package require Tcl 8.5
-namespace eval TCLExec {
-	variable Prefix_CMD		"tcl";			# Commande qui permet d'executé du code TCL.
-	variable Multi_CMD		"2";			# Multi Commandes: 
-											# 1-> <prefix>
-											# 2-> bot<prefix> et <prefix>
-											# 3-> bot<prefix>
-	variable List_Users		"ZarTek";	# Liste des utilisateurs autoriser. Laisser vide pour tout le monde
-	variable List_Salons	"";				# Liste des salons autoriser. Laisser vide pour autoriser tout les salons
-	
-###########################
-# Fin de la Configuration #
-###########################
-
+namespace eval ::TCLExec {
 #############################################################################
 ### Initialisation
 #############################################################################
@@ -41,9 +29,29 @@ namespace eval TCLExec {
 		"version"			"1.0.4"
 		"auteur"			"ZarTek"
 	}
+	set PATH_SCRIPT "[file dirname [file normalize [info script]]]/TCL_Exec.conf"
+    if { [ catch {
+        source ${PATH_SCRIPT}
+    } err ] } {
+        putlog "[namespace current] > Error: Chargement du fichier '${PATH_SCRIPT}' > $err"
+        return -code error $err
+    }
+    set List_Var_Conf		 [list  \
+				"Prefix_CMD"        \
+				"Multi_CMD"         \
+				"List_Users"        \
+				"List_Salons" 		\
+    ];
+    foreach varName [split ${List_Var_Conf}] {
+        if { ![info exists [namespace current]::${varName}] } {
+            putlog "[namespace current] > Error: La configuration ${varName} est manquante dans ${PATH_SCRIPT}"
+            exit
+        }
+    }
 }
-	# Procédure de désinstallation
-	# (le script se désinstalle totalement avant chaque rehash ou é chaque relecture au moyen de la commande "source" ou autre)
+
+# Procédure de désinstallation
+# (le script se désinstalle totalement avant chaque rehash ou é chaque relecture au moyen de la commande "source" ou autre)
 proc ::TCLExec::uninstall {args} {
 	putlog "Désallocation des ressources de \002${::TCLExec::SCRIPT(name)}\002...";
 	foreach binding [lsearch -inline -all -regexp [binds *[set ns [string range [namespace current] 2 end]]*] " \{?(::)?${ns}"] {
@@ -51,7 +59,6 @@ proc ::TCLExec::uninstall {args} {
 	}
 	namespace delete ::TCLExec
 }
-
 
 if { ${::TCLExec::Multi_CMD} == 1 } {
 	bind pub - "${::TCLExec::Prefix_CMD}" ::TCLExec::Command
@@ -73,18 +80,22 @@ if { ${::TCLExec::Multi_CMD} == 1 } {
 	bind pub - "[string toupper ${::botnet-nick}]tcl" ::TCLExec::Command
 
 }
+
 proc ::TCLExec::Command { nick host hand chan args } {
+	putlog "----------------------------->>>>>>>>>>>>> $args"
+	variable List_Users		${::TCLExec::List_Users}
+	variable List_Salons	${::TCLExec::List_Salons}
 	if {![matchattr ${nick} E]} {
 		if {
-			${::TCLExec::List_Users} != "" 								&& \
-			[lsearch -glob ${::TCLExec::List_Users} ${nick}] == -1
-		} { 
+			${List_Users} != "" 								&& \
+			[lsearch -glob ${List_Users} ${nick}] == -1
+		} {
 			putserv "privmsg ${chan} :Nickname '${nick}' have access denied.";
-			return 0; 
+			return 0;
 		}
 		if {
-			${::TCLExec::List_Salons} != "" 							&& \
-			[lsearch -glob $::TCLExec::List_Salons ${chan}] == -1
+			${List_Salons} != "" 							&& \
+			[lsearch -glob ${List_Salons} ${chan}] == -1
 		} {
 			putserv "privmsg ${chan} :Channel '${chan}' have access denied.";
 			return 0;
@@ -94,8 +105,8 @@ proc ::TCLExec::Command { nick host hand chan args } {
 	set start 	[clock clicks];
 	set errnum 	[catch {eval ${args}} error];
 	set end 	[clock clicks];
-	if { ${error} == "" } { 
-		set error "<empty string>"; 
+	if { ${error} == "" } {
+		set error "<empty string>";
 	}
 	switch -- ${errnum} {
 		0 {
